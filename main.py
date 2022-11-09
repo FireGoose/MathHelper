@@ -1,12 +1,11 @@
-import sys
 import os
+import sqlite3
+import sys
+import typing as tp
 from sqlite3 import IntegrityError
 
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QMainWindow, QApplication, QPushButton, QWidget, QLabel, QLineEdit
-
-import sqlite3
-import typing as tp
+from PyQt5.QtWidgets import QApplication, QLabel, QLineEdit, QMainWindow, QPushButton, QWidget
 
 
 def sqlite_lower(string):  # Переопределение функции преобразования к нижнему регистру
@@ -17,77 +16,80 @@ def sqlite_upper(string):  # Переопределение функции пр�
     return string.upper()
 
 
-class Data:
+class Data:  # Класс для работы с базой данных sqlite
     def __init__(self) -> None:
-        if not os.path.exists('./data'):
+        if not os.path.exists('./data'):  # Создание папки с базой данных
             os.mkdir('./data')
+
+        query = """CREATE TABLE IF NOT EXISTS "maths" (
+                'id' INTEGER PRIMARY KEY AUTOINCREMENT,
+                'name' TEXT,
+                'formula' TEXT,
+                'section' TEXT
+                )"""
+        self.execute_query(query)  # Создание базы данных
         with sqlite3.connect('./data/base.db') as db:
-            cursor = db.cursor()
-            query = """CREATE TABLE IF NOT EXISTS "maths" (
-                    'name' TEXT PRIMARY KEY,
-                    'formula' TEXT,
-                    'section' TEXT
-                    )"""
-            cursor.execute(query)
-            db.commit()
+            self.cursor = db.cursor()
 
         self.error: tp.Optional[ExistingElementErrorWindow] = None
-        self.cursor = db.cursor()
 
-    def add(self, name: str, formula: str, section: str) -> None:
-        with sqlite3.connect('./data/base.db') as db:
-            self.cursor = db.cursor()
-            query = f"""INSERT INTO maths(name, formula, section) VALUES(?, ?, ?)"""
-            self.cursor.execute(query, (name, formula, section))
-            db.commit()
-
-    def update_formula(self, name: str, formula: str) -> None:
+    def execute_query(self, query: str, fields=tuple()) -> list:  # Исполнение запроса в базу данных
         with sqlite3.connect('./data/base.db') as db:
             db.create_function("LOWER", 1, sqlite_lower)
             db.create_function("UPPER", 1, sqlite_upper)
             self.cursor = db.cursor()
-            query = f"""UPDATE maths 
-            SET formula = ? 
-            WHERE LOWER(name) = ?"""
-            self.cursor.execute(query, (formula, name.lower()))
+            result = self.cursor.execute(query, fields).fetchall()
             db.commit()
-
-    def update_section(self, name: str, section: str) -> None:
-        with sqlite3.connect('./data/base.db') as db:
-            db.create_function("LOWER", 1, sqlite_lower)
-            db.create_function("UPPER", 1, sqlite_upper)
-            self.cursor = db.cursor()
-            query = f"""UPDATE maths 
-            SET section = ? 
-            WHERE LOWER(name) = ?"""
-            self.cursor.execute(query, (section, name.lower()))
-            db.commit()
-
-    def delete_values(self, name: str) -> None:
-        with sqlite3.connect('./data/base.db') as db:
-            db.create_function("LOWER", 1, sqlite_lower)
-            db.create_function("UPPER", 1, sqlite_upper)
-            self.cursor = db.cursor()
-            query = f"""DELETE FROM maths 
-            WHERE LOWER(name) = ?"""
-            self.cursor.execute(query, (name.lower(),))
-            db.commit()
-
-    def select_values(self, name: str) -> list:
-        with sqlite3.connect('./data/base.db') as db:
-            db.create_function("LOWER", 1, sqlite_lower)
-            db.create_function("UPPER", 1, sqlite_upper)
-            self.cursor = db.cursor()
-            query = f"""SELECT * FROM maths 
-            WHERE LOWER(name) = ?"""
-            result = self.cursor.execute(query, (name.lower(),)).fetchall()
             return result
+
+    def show_error_window(self):  # Функция показа виджета ошибки отсутствующей строки
+        self.error = MissingElementErrorWindow()
+        self.error.show()
+
+    def add(self, name: str, formula: str, section: str) -> None:  # Добавление строки в базу данных
+        query = f"""INSERT INTO maths(name, formula, section) VALUES(?, ?, ?)"""
+        self.execute_query(query, (name, formula, section))
+
+    def update_formula(self, name: str, formula: str) -> None:  # Изменение формулы в строке базы данных
+        if not self.select_values(name):
+            self.show_error_window()
+            return
+
+        query = f"""UPDATE maths 
+                SET formula = ? 
+                WHERE LOWER(name) = ?"""
+        self.execute_query(query, (formula, name.lower()))
+
+    def update_section(self, name: str, section: str) -> None:  # Изменение раздела математики в строке базы данных
+        if not self.select_values(name):
+            self.show_error_window()
+            return
+
+        query = f"""UPDATE maths 
+                SET section = ? 
+                WHERE LOWER(name) = ?"""
+        self.execute_query(query, (section, name.lower()))
+
+    def delete_values(self, name: str) -> None:  # Удаление строки в базе данных
+        if not self.select_values(name):
+            self.show_error_window()
+            return
+
+        query = f"""DELETE FROM maths 
+                WHERE LOWER(name) = ?"""
+        self.execute_query(query, (name.lower(),))
+
+    def select_values(self, name: str) -> list:  # Показ строки из базы данных
+        query = f"""SELECT * FROM maths 
+                WHERE LOWER(name) = ?"""
+        result = self.execute_query(query, (name,))
+        return result
 
 
 data = Data()
 
 
-class MissingElementErrorWindow(QWidget):
+class MissingElementErrorWindow(QWidget):  # Виджет ошибки отсутствующего элемента в базе данных
     def __init__(self) -> None:
         super().__init__()
 
@@ -103,7 +105,7 @@ class MissingElementErrorWindow(QWidget):
         self.label.move(30, 65)
 
 
-class ExistingElementErrorWindow(QWidget):
+class ExistingElementErrorWindow(QWidget):  # Виджет ошибки присутствующего элемента в базе данных
     def __init__(self) -> None:
         super().__init__()
 
@@ -118,7 +120,15 @@ class ExistingElementErrorWindow(QWidget):
         self.label.move(90, 65)
 
 
-class MainWindow(QMainWindow):
+class DataEntity:  # Виджет ошибки отсутствующего элемента в базе данных
+    def __init__(self, entity) -> None:
+        self.id = entity[0]
+        self.name = entity[1]
+        self.formula = entity[2]
+        self.section = entity[3]
+
+
+class MainWindow(QMainWindow):  # Виджет главного окна
     def __init__(self) -> None:
         super().__init__()
 
@@ -182,7 +192,7 @@ class MainWindow(QMainWindow):
         self.ex5.show()
 
 
-class AddWindow(QWidget):
+class AddWindow(QWidget):  # Виджет окна добавления строки
     def __init__(self) -> None:
         super().__init__()
 
@@ -241,7 +251,7 @@ class AddWindow(QWidget):
             self.error.show()
 
 
-class DelWindow(QWidget):
+class DelWindow(QWidget):  # Виджет окна удаления строки
     def __init__(self) -> None:
         super().__init__()
 
@@ -273,14 +283,12 @@ class DelWindow(QWidget):
 
     def input_result(self) -> None:
         name = self.name_input.text()
-        try:
-            data.delete_values(name)
-        except:
-            self.error.show()
-        self.close()
+        data.delete_values(name)
+        if data.error.isHidden():
+            self.close()
 
 
-class FormulaWindow(QWidget):
+class FormulaWindow(QWidget):  # Виджет окна изменения формулы
     def __init__(self) -> None:
         super().__init__()
 
@@ -322,14 +330,12 @@ class FormulaWindow(QWidget):
     def input_result(self) -> None:
         name = self.name_input.text()
         formula = self.formula_input.text()
-        try:
-            data.update_formula(name, formula)
-        except:
-            self.error.show()
-        self.close()
+        data.update_formula(name, formula)
+        if data.error.isHidden():
+            self.close()
 
 
-class SectionWindow(QWidget):
+class SectionWindow(QWidget):  # Виджет окна изменения раздела математики
     def __init__(self) -> None:
         super().__init__()
 
@@ -371,14 +377,12 @@ class SectionWindow(QWidget):
     def input_result(self) -> None:
         name = self.name_input.text()
         section = self.section_input.text()
-        try:
-            data.update_section(name, section)
-        except:
-            self.error.show()
-        self.close()
+        data.update_section(name, section)
+        if data.error.isHidden():
+            self.close()
 
 
-class CheckWindow(QWidget):
+class CheckWindow(QWidget):  # Виджет окна ввода закона для просмотра
     def __init__(self) -> None:
         super().__init__()
 
@@ -415,14 +419,15 @@ class CheckWindow(QWidget):
         if not result:
             self.error.show()
             return
-        name = result[0][0]
-        formula = result[0][1]
-        section = result[0][2]
+        entity = DataEntity(result[0])
+        name = entity.name
+        formula = entity.formula
+        section = entity.section
         self.result_window = ResultWindow(name, formula, section)
         self.result_window.show()
 
 
-class ResultWindow(QWidget):
+class ResultWindow(QWidget):  # Виджет окна просмотра закона
     def __init__(self, name: str, formula: str, section: str) -> None:
         super().__init__()
 
@@ -435,8 +440,8 @@ class ResultWindow(QWidget):
         self.initUI()
 
     def initUI(self) -> None:
-        result_string = self.name + ': ' + self.formula + ', раздел математики - '
-        result_string += self.section.lower() + '.'
+        result_list = [self.name, ': ', self.formula, ', раздел математики - ', self.section.lower(), '.']
+        result_string = ''.join(result_list)
         self.setGeometry(600, 500, 750, 120)
         self.setWindowTitle('Просмотр закона')
         text_font = QFont('Arial', 10)
