@@ -232,18 +232,23 @@ class MainWindow(QMainWindow):
         self.check_button.clicked.connect(self.check)
 
     def add(self) -> None:
+        self.ex1 = AddWindow()
         self.ex1.show()
 
     def delete(self) -> None:
+        self.ex2 = DelWindow()
         self.ex2.show()
 
     def formula(self) -> None:
+        self.ex3 = FormulaWindow()
         self.ex3.show()
 
     def section(self) -> None:
+        self.ex4 = SectionWindow()
         self.ex4.show()
 
     def check(self) -> None:
+        self.ex5 = CheckWindow()
         self.ex5.show()
 
 
