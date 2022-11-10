@@ -137,3 +137,7 @@ dmypy.json
 # DataBase
 .data
 data/
+
+# Folder with .exe file
+.output
+output/
