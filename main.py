@@ -4,8 +4,9 @@ import sys
 import typing as tp
 from sqlite3 import IntegrityError
 
+from PyQt5.QtCore import QStringListModel
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QApplication, QLabel, QLineEdit, QMainWindow, QPushButton, QWidget
+from PyQt5.QtWidgets import QApplication, QCompleter, QLabel, QLineEdit, QMainWindow, QPushButton, QWidget
 
 
 def sqlite_lower(string):
@@ -130,6 +131,16 @@ class Data:
                 WHERE LOWER(name) = ?"""
         result = self.execute_query(query, (name.lower(),))
         return result
+
+    def get_name_list(self) -> list:
+        """Вывод списка всех названий законов из базы данных"""
+
+        query = f"""SELECT name FROM maths"""
+        with sqlite3.connect('./data/base.db') as db:
+            self.cursor = db.cursor()
+            result = list(map(lambda x: x[0], self.cursor.execute(query).fetchall()))
+            db.commit()
+            return result
 
 
 data = Data()
@@ -305,6 +316,9 @@ class DelWindow(QWidget):
 
         self.name_input = QLineEdit(self)
 
+        self.completer = QCompleter()
+        self.model = QStringListModel()
+
         self.result_button = QPushButton('Подтвердить', self)
 
         self.error = MissingElementErrorWindow()
@@ -323,6 +337,10 @@ class DelWindow(QWidget):
 
         self.name_input.move(20, 52)
         self.name_input.resize(450, 30)
+
+        self.model.setStringList(data.get_name_list())
+        self.completer.setModel(self.model)
+        self.name_input.setCompleter(self.completer)
 
         self.result_button.resize(150, 30)
         self.result_button.move(320, 150)
@@ -345,6 +363,9 @@ class FormulaWindow(QWidget):
         self.name_input = QLineEdit(self)
         self.formula_input = QLineEdit(self)
 
+        self.completer = QCompleter()
+        self.model = QStringListModel()
+
         self.result_button = QPushButton('Подтвердить', self)
 
         self.error = MissingElementErrorWindow()
@@ -363,6 +384,10 @@ class FormulaWindow(QWidget):
 
         self.name_input.move(20, 52)
         self.name_input.resize(450, 30)
+
+        self.model.setStringList(data.get_name_list())
+        self.completer.setModel(self.model)
+        self.name_input.setCompleter(self.completer)
 
         label2 = QLabel(self)
         label2.setFont(text_font)
@@ -394,6 +419,9 @@ class SectionWindow(QWidget):
         self.name_input = QLineEdit(self)
         self.section_input = QLineEdit(self)
 
+        self.completer = QCompleter()
+        self.model = QStringListModel()
+
         self.result_button = QPushButton('Подтвердить', self)
 
         self.error = MissingElementErrorWindow()
@@ -412,6 +440,10 @@ class SectionWindow(QWidget):
 
         self.name_input.move(20, 52)
         self.name_input.resize(450, 30)
+
+        self.model.setStringList(data.get_name_list())
+        self.completer.setModel(self.model)
+        self.name_input.setCompleter(self.completer)
 
         label2 = QLabel(self)
         label2.setFont(text_font)
@@ -442,6 +474,9 @@ class CheckWindow(QWidget):
 
         self.name_input = QLineEdit(self)
 
+        self.completer = QCompleter()
+        self.model = QStringListModel()
+
         self.result_button = QPushButton('Подтвердить', self)
 
         self.error = MissingElementErrorWindow()
@@ -461,6 +496,10 @@ class CheckWindow(QWidget):
 
         self.name_input.move(20, 52)
         self.name_input.resize(450, 30)
+
+        self.model.setStringList(data.get_name_list())
+        self.completer.setModel(self.model)
+        self.name_input.setCompleter(self.completer)
 
         self.result_button.resize(150, 30)
         self.result_button.move(320, 150)
