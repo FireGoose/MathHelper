@@ -41,7 +41,7 @@ class Data:
 
         query = """CREATE TABLE IF NOT EXISTS "maths" (
                 'id' INTEGER PRIMARY KEY AUTOINCREMENT,
-                'name' TEXT,
+                'name' TEXT UNIQUE,
                 'formula' TEXT,
                 'section' TEXT
                 )"""
@@ -79,7 +79,7 @@ class Data:
     def update_formula(self, name: str, formula: str) -> None:
         """Изменение формулы в строке базы данных"""
 
-        if not self.select_values(name):
+        if not self.select_values(name).entity:
             self.show_error_window()
             return
 
@@ -91,7 +91,7 @@ class Data:
     def update_section(self, name: str, section: str) -> None:
         """Изменение раздела математики в строке базы данных"""
 
-        if not self.select_values(name):
+        if not self.select_values(name).entity:
             self.show_error_window()
             return
 
@@ -103,7 +103,7 @@ class Data:
     def update_name(self, name: str) -> None:
         """Изменение имени закона в строке базы данных"""
 
-        if not self.select_values(name):
+        if not self.select_values(name).entity:
             self.show_error_window()
             return
 
@@ -115,7 +115,7 @@ class Data:
     def delete_values(self, name: str) -> None:
         """Удаление строки в базе данных"""
 
-        if not self.select_values(name):
+        if not self.select_values(name).entity:
             self.show_error_window()
             return
 
@@ -128,7 +128,7 @@ class Data:
 
         query = f"""SELECT * FROM maths 
                 WHERE LOWER(name) = ?"""
-        result = self.execute_query(query, (name,))
+        result = self.execute_query(query, (name.lower(),))
         return result
 
 
@@ -332,7 +332,7 @@ class DelWindow(QWidget):
     def input_result(self) -> None:
         name = self.name_input.text()
         data.delete_values(name)
-        if data.error.isHidden():
+        if not data.error or data.error.isHidden():
             self.close()
 
 
