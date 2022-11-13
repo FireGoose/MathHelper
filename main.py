@@ -345,6 +345,7 @@ class DelWindow(QWidget):
 
         self.model.setStringList(data.get_name_list())
         self.completer.setModel(self.model)
+        self.completer.setCaseSensitivity(0)
         self.name_input.setCompleter(self.completer)
 
         self.result_button.resize(150, 30)
@@ -392,6 +393,7 @@ class FormulaWindow(QWidget):
 
         self.model.setStringList(data.get_name_list())
         self.completer.setModel(self.model)
+        self.completer.setCaseSensitivity(0)
         self.name_input.setCompleter(self.completer)
 
         label2 = QLabel(self)
@@ -448,6 +450,7 @@ class SectionWindow(QWidget):
 
         self.model.setStringList(data.get_name_list())
         self.completer.setModel(self.model)
+        self.completer.setCaseSensitivity(0)
         self.name_input.setCompleter(self.completer)
 
         label2 = QLabel(self)
@@ -504,6 +507,7 @@ class CheckWindow(QWidget):
 
         self.model.setStringList(data.get_name_list())
         self.completer.setModel(self.model)
+        self.completer.setCaseSensitivity(0)
         self.name_input.setCompleter(self.completer)
 
         self.result_button.resize(150, 30)
