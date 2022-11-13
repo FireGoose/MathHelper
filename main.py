@@ -192,7 +192,7 @@ class MainWindow(QMainWindow):
 
     def initUI(self) -> None:
         self.setGeometry(600, 360, 700, 440)
-        self.setWindowTitle('Math.exe')
+        self.setWindowTitle('MathHelper.exe')
         text_font = QFont('Arial', 14)
 
         self.add_button.resize(660, 75)
