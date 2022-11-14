@@ -543,16 +543,16 @@ class ResultWindow(QWidget):
         self.initUI()
 
     def initUI(self) -> None:
-        result_list = [self.name, ': ', self.formula, ', раздел математики - ', self.section.lower(), '.']
+        result_list = [self.name, '\n', self.formula, '\nРаздел математики - ', self.section.lower()]
         result_string = ''.join(result_list)
-        self.setGeometry(600, 500, 750, 120)
+        self.setGeometry(600, 500, 700, 105)
         self.setWindowTitle('Просмотр закона')
         text_font = QFont('Arial', 10)
 
         label1 = QLabel(self)
         label1.setFont(text_font)
         label1.setText(result_string)
-        label1.move(20, 40)
+        label1.move(20, 20)
 
 
 def main() -> None:
